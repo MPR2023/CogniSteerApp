@@ -18,6 +18,8 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import android.net.wifi.WifiManager
+import android.content.Context
 
 class MainActivity : ComponentActivity() {
 
@@ -37,6 +39,17 @@ class MainActivity : ComponentActivity() {
             == PackageManager.PERMISSION_GRANTED) {
             fetchLocation()
         }
+
+        // Initialize WiFiManager
+        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+
+        // Fetch WiFi Information
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_WIFI_STATE)
+            == PackageManager.PERMISSION_GRANTED) {
+            val wifiInfo = wifiManager.connectionInfo
+            Log.d("WiFiInfo", "SSID: ${wifiInfo.ssid}, BSSID: ${wifiInfo.bssid}")
+        }
+
 
         setContent {
             CogniSteerTheme {
