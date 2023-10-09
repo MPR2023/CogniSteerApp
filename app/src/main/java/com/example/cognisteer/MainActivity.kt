@@ -28,6 +28,16 @@ class MainActivity : ComponentActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var bluetoothAdapter: BluetoothAdapter
 
+    private val leScanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult) {
+            super.onScanResult(callbackType, result)
+            // Handle the scan result here
+            val deviceName = result.device.name
+            val deviceAddress = result.device.address
+            // TODO: Send this information to your backend
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -70,6 +80,9 @@ class MainActivity : ComponentActivity() {
             }
         } else {
             Log.d("BluetoothInfo", "Could not obtain BluetoothManager")
+
+            val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
+            bluetoothLeScanner?.startScan(leScanCallback)
         }
 
         setContent {
