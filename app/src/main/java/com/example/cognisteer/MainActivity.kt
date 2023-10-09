@@ -22,6 +22,8 @@ import android.net.wifi.WifiManager
 import android.content.Context
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
 
 class MainActivity : ComponentActivity() {
 
@@ -31,10 +33,14 @@ class MainActivity : ComponentActivity() {
     private val leScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
-            // Handle the scan result here
-            val deviceName = result.device.name
-            val deviceAddress = result.device.address
-            // TODO: Send this information to your backend
+            try {
+                val deviceName = result.device.name
+                val deviceAddress = result.device.address
+                Log.d("BLE_Scan", "Device Name: $deviceName, Device Address: $deviceAddress")
+                // TODO: Send this information to your backend
+            } catch (e: SecurityException) {
+                // Handle the exception
+            }
         }
     }
 
@@ -68,6 +74,20 @@ class MainActivity : ComponentActivity() {
         if (bluetoothManager != null) {
             bluetoothAdapter = bluetoothManager.adapter
 
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_ADMIN
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                val bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
+                bluetoothLeScanner?.startScan(leScanCallback)
+            } else {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.BLUETOOTH_ADMIN),
+                    1
+                )
+            }
             // Check Bluetooth support and status
             if (bluetoothAdapter == null) {
                 Log.d("BluetoothInfo", "Device doesn't support Bluetooth")
@@ -78,11 +98,10 @@ class MainActivity : ComponentActivity() {
                     Log.d("BluetoothInfo", "Bluetooth is enabled")
                 }
             }
-        } else {
-            Log.d("BluetoothInfo", "Could not obtain BluetoothManager")
-
             val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
             bluetoothLeScanner?.startScan(leScanCallback)
+        } else {
+            Log.d("BluetoothInfo", "Could not obtain BluetoothManager")
         }
 
         setContent {
