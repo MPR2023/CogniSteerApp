@@ -54,18 +54,22 @@ class MainActivity : ComponentActivity() {
         }
 
         // Initialize BluetoothAdapter
-        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        bluetoothAdapter = bluetoothManager.adapter
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+        if (bluetoothManager != null) {
+            bluetoothAdapter = bluetoothManager.adapter
 
-        // Check Bluetooth support and status
-        if (bluetoothAdapter == null) {
-            Log.d("BluetoothInfo", "Device doesn't support Bluetooth")
-        } else {
-            if (!bluetoothAdapter.isEnabled) {
-                Log.d("BluetoothInfo", "Bluetooth is not enabled")
+            // Check Bluetooth support and status
+            if (bluetoothAdapter == null) {
+                Log.d("BluetoothInfo", "Device doesn't support Bluetooth")
             } else {
-                Log.d("BluetoothInfo", "Bluetooth is enabled")
+                if (!bluetoothAdapter.isEnabled) {
+                    Log.d("BluetoothInfo", "Bluetooth is not enabled")
+                } else {
+                    Log.d("BluetoothInfo", "Bluetooth is enabled")
+                }
             }
+        } else {
+            Log.d("BluetoothInfo", "Could not obtain BluetoothManager")
         }
 
         setContent {
