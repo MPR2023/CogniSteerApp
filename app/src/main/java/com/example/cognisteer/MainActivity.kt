@@ -98,8 +98,6 @@ class MainActivity : ComponentActivity() {
                     Log.d("BluetoothInfo", "Bluetooth is enabled")
                 }
             }
-            val bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
-            bluetoothLeScanner?.startScan(leScanCallback)
         } else {
             Log.d("BluetoothInfo", "Could not obtain BluetoothManager")
         }
