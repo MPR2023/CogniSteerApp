@@ -20,10 +20,13 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import android.net.wifi.WifiManager
 import android.content.Context
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var bluetoothAdapter: BluetoothAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,6 +53,20 @@ class MainActivity : ComponentActivity() {
             Log.d("WiFiInfo", "SSID: ${wifiInfo.ssid}, BSSID: ${wifiInfo.bssid}")
         }
 
+        // Initialize BluetoothAdapter
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothAdapter = bluetoothManager.adapter
+
+        // Check Bluetooth support and status
+        if (bluetoothAdapter == null) {
+            Log.d("BluetoothInfo", "Device doesn't support Bluetooth")
+        } else {
+            if (!bluetoothAdapter.isEnabled) {
+                Log.d("BluetoothInfo", "Bluetooth is not enabled")
+            } else {
+                Log.d("BluetoothInfo", "Bluetooth is enabled")
+            }
+        }
 
         setContent {
             CogniSteerTheme {
