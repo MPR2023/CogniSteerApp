@@ -56,6 +56,8 @@ class MainActivity : ComponentActivity() {
                 if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_ADMIN) == PackageManager.PERMISSION_GRANTED &&
                     ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
 
+                    ActivityCompat.requestPermissions(this@MainActivity, arrayOf(Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH_CONNECT), 1234)
+
                     Log.d("BLE_Scan", "Scan result received: ${result.device.name}, ${result.device.address}")
 
                     val deviceName = result.device.name
@@ -205,7 +207,7 @@ class MainActivity : ComponentActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            requestEnableBluetooth -> {
+            1234 -> {  // This should match the request code you used for Bluetooth permissions
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     try {
                         // Permission granted, proceed with Bluetooth operations
