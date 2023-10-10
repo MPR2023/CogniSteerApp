@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
             try {
                 val deviceName = result.device.name
                 val deviceAddress = result.device.address
-                if (deviceName == "CogniSteerBeacon" || deviceAddress == "94:B5:55:C0:6B:7A") {
+                if (deviceName == "MyBLEDevice" || deviceAddress == "94:B5:55:C0:6B:7A") {
                     Log.d("BLE_Scan", "CogniSteerBeacon detected! Device Name: $deviceName, Device Address: $deviceAddress")
 
                     // Fetch the actual location from the fusedLocationClient
