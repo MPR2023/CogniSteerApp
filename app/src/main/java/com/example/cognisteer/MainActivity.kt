@@ -32,6 +32,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import android.os.Build
+import android.widget.Toast
+
 
 
 var currentProtocol by mutableStateOf("No protocol yet")
@@ -41,6 +44,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var bluetoothAdapter: BluetoothAdapter
 
     var currentProtocol by mutableStateOf("No protocol yet")
+
+    private val requestEnableBluetooth = 1
 
     private val leScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
@@ -119,6 +124,22 @@ class MainActivity : ComponentActivity() {
         if (bluetoothManager != null) {
             bluetoothAdapter = bluetoothManager.adapter
 
+            // Request Bluetooth permissions
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.BLUETOOTH_SCAN
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    ActivityCompat.requestPermissions(
+                        this,
+                        arrayOf(Manifest.permission.BLUETOOTH_SCAN),
+                        requestEnableBluetooth
+                    )
+                }
+            } else {
+                // Handle permissions for older Android versions here, if needed
+            }
             if (ActivityCompat.checkSelfPermission(
                     this,
                     Manifest.permission.BLUETOOTH_ADMIN
@@ -159,7 +180,43 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }  // <-- Make sure to close the onCreate() method here
+    } // <-- Make sure to close the onCreate() method here
+
+    @Deprecated("This method is deprecated")
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            requestEnableBluetooth -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    try {
+                        // Permission granted, proceed with Bluetooth operations
+                        val bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
+                        bluetoothLeScanner?.startScan(leScanCallback)
+                        Log.d("Permissions", "Bluetooth permission granted. Starting scan.")
+                    } catch (e: SecurityException) {
+                        // Handle the SecurityException
+                        Log.e("Permissions", "SecurityException while starting Bluetooth scan", e)
+                    }
+                } else {
+                    // Permission denied, disable functionality that depends on this permission
+                    Toast.makeText(
+                        this,
+                        "Bluetooth permissions are required for this feature. Disabling Bluetooth functionality.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    Log.d("Permissions", "Bluetooth permission denied. Disabling Bluetooth functionality.")
+                }
+            }
+            else -> {
+                // Ignore all other requests
+                Log.d("Permissions", "Received unhandled requestCode: $requestCode")
+            }
+        }
+    }
 
     private fun fetchLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
