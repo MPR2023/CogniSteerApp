@@ -24,11 +24,23 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import okhttp3.*
+import org.json.JSONObject
+import java.io.IOException
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
+
+var currentProtocol by mutableStateOf("No protocol yet")
 class MainActivity : ComponentActivity() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var bluetoothAdapter: BluetoothAdapter
+
+    var currentProtocol by mutableStateOf("No protocol yet")
 
     private val leScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
@@ -38,7 +50,38 @@ class MainActivity : ComponentActivity() {
                 val deviceAddress = result.device.address
                 if (deviceName == "CogniSteerBeacon" || deviceAddress == "94:B5:55:C0:6B:7A") {
                     Log.d("BLE_Scan", "CogniSteerBeacon detected! Device Name: $deviceName, Device Address: $deviceAddress")
-                    // TODO: Send this information to your backend
+
+                    // Fetch the actual location from the fusedLocationClient
+                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                        if (location != null) {
+                            val latitude = location.latitude
+                            val longitude = location.longitude
+
+                            // OkHttp code to call the API
+                            val client = OkHttpClient()
+                            val json = "{\"location\": {\"latitude\": $latitude, \"longitude\": $longitude}}"
+                            val requestBody = json.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+
+                            val request = Request.Builder()
+                                .url("http://localhost:3000/fetch_protocol_based_on_location/")
+                                .post(requestBody)
+                                .build()
+
+                            client.newCall(request).enqueue(object : Callback {
+                                override fun onFailure(call: Call, e: IOException) {
+                                    // Handle the error
+                                }
+
+                                override fun onResponse(call: Call, response: Response) {
+                                    if (response.isSuccessful) {
+                                        val responseBody = response.body?.string()
+                                        val protocol = responseBody?.let { JSONObject(it).optString("protocol", "default_value") }
+                                        currentProtocol = protocol ?: "No protocol received"
+                                    }
+                                }
+                            })
+                        }
+                    }
                 }
             } catch (e: SecurityException) {
                 // Handle the exception
@@ -112,6 +155,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Greeting("Android")
+                    DisplayProtocol()
                 }
             }
         }
@@ -148,4 +192,9 @@ fun GreetingPreview() {
     CogniSteerTheme {
         Greeting("Android")
     }
+}
+
+@Composable
+fun DisplayProtocol() {
+    Text(text = currentProtocol)
 }
