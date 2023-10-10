@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
                             val requestBody = json.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
 
                             val request = Request.Builder()
-                                .url("http://localhost:3000/fetch_protocol_based_on_location/")
+                                .url("http://192.168.68.129:8000/fetch_protocol_based_on_location/")
                                 .post(requestBody)
                                 .build()
 
