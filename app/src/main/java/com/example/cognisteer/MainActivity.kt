@@ -50,51 +50,66 @@ class MainActivity : ComponentActivity() {
     private val leScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
+
             try {
-                val deviceName = result.device.name
-                val deviceAddress = result.device.address
-                if (deviceName == "MyBLEDevice" || deviceAddress == "94:B5:55:C0:6B:7A") {
-                    Log.d("BLE_Scan", "CogniSteerBeacon detected! Device Name: $deviceName, Device Address: $deviceAddress")
+                // Check for BLE permissions
+                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_ADMIN) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
 
-                    // Fetch the actual location from the fusedLocationClient
-                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                        if (location != null) {
-                            val latitude = location.latitude
-                            val longitude = location.longitude
+                    Log.d("BLE_Scan", "Scan result received: ${result.device.name}, ${result.device.address}")
 
-                            // OkHttp code to call the API
-                            val client = OkHttpClient()
-                            val json = "{\"location\": {\"latitude\": $latitude, \"longitude\": $longitude}}"
-                            val requestBody = json.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+                    val deviceName = result.device.name
+                    val deviceAddress = result.device.address
 
-                            val request = Request.Builder()
-                                .url("http://192.168.68.129:8000/fetch_protocol_based_on_location/")
-                                .post(requestBody)
-                                .build()
+                    if (deviceName == "MyBLEDevice" || deviceAddress == "94:B5:55:C0:6B:7A") {
+                        Log.d("BLE_Scan", "CogniSteerBeacon detected! Device Name: $deviceName, Device Address: $deviceAddress")
 
-                            client.newCall(request).enqueue(object : Callback {
-                                override fun onFailure(call: Call, e: IOException) {
-                                    // Handle the error
+                        // Check for location permissions
+                        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                                if (location != null) {
+                                    val latitude = location.latitude
+                                    val longitude = location.longitude
+
+                                    // OkHttp code to call the API
+                                    val client = OkHttpClient()
+                                    val json = "{\"location\": {\"latitude\": $latitude, \"longitude\": $longitude}}"
+                                    val requestBody = json.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+
+                                    val request = Request.Builder()
+                                        .url("http://192.168.68.129:8000/fetch_protocol_based_on_location/")
+                                        .post(requestBody)
+                                        .build()
+
+                                    client.newCall(request).enqueue(object : Callback {
+                                        override fun onFailure(call: Call, e: IOException) {
+                                            // Handle the error
+                                        }
+
+                                        override fun onResponse(call: Call, response: Response) {
+                                            if (response.isSuccessful) {
+                                                val responseBody = response.body?.string()
+                                                val protocol = responseBody?.let { JSONObject(it).optString("protocol", "default_value") }
+                                                currentProtocol = protocol ?: "No protocol received"
+                                            }
+                                        }
+                                    })
                                 }
-
-                                override fun onResponse(call: Call, response: Response) {
-                                    if (response.isSuccessful) {
-                                        val responseBody = response.body?.string()
-                                        val protocol = responseBody?.let { JSONObject(it).optString("protocol", "default_value") }
-                                        currentProtocol = protocol ?: "No protocol received"
-                                    }
-                                }
-                            })
+                            }
+                        } else {
+                            Log.d("BLE_Scan", "Location permission not granted")
                         }
                     }
+                } else {
+                    Log.d("BLE_Scan", "Bluetooth permissions not granted")
                 }
-            } catch (e: SecurityException) {
-                // Handle the exception
+            } catch (e: Exception) {
+                Log.e("BLE_Scan", "Exception occurred: ${e.message}")
             }
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+        override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -238,7 +253,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
-        text = "Hello $name!",
+        text = "  $name!",
         modifier = modifier
     )
 }
@@ -247,7 +262,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun GreetingPreview() {
     CogniSteerTheme {
-        Greeting("Android")
+        Greeting(" ")
     }
 }
 
