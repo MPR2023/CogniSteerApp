@@ -32,12 +32,12 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import android.os.Build
 import android.widget.Toast
 
 
 
 var currentProtocol by mutableStateOf("No protocol yet")
+@Suppress("DEPRECATION") // Suppressing deprecation for the entire class
 class MainActivity : ComponentActivity() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -127,14 +127,14 @@ class MainActivity : ComponentActivity() {
         }
 
         // Initialize WiFiManager
-        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
-        // Fetch WiFi Information
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_WIFI_STATE)
-            == PackageManager.PERMISSION_GRANTED) {
-            val wifiInfo = wifiManager.connectionInfo
-            Log.d("WiFiInfo", "SSID: ${wifiInfo.ssid}, BSSID: ${wifiInfo.bssid}")
-        }
+            // Fetch WiFi Information
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_WIFI_STATE)
+                == PackageManager.PERMISSION_GRANTED) {
+                val wifiInfo = wifiManager.connectionInfo // Deprecated but still usable
+                Log.d("WiFiInfo", "SSID: ${wifiInfo.ssid}, BSSID: ${wifiInfo.bssid}")
+            }
 
         // Initialize BluetoothAdapter
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
@@ -142,18 +142,16 @@ class MainActivity : ComponentActivity() {
             bluetoothAdapter = bluetoothManager.adapter
 
             // Request Bluetooth permissions
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (ContextCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.BLUETOOTH_SCAN
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    ActivityCompat.requestPermissions(
-                        this,
-                        arrayOf(Manifest.permission.BLUETOOTH_SCAN),
-                        requestEnableBluetooth
-                    )
-                }
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_SCAN
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.BLUETOOTH_SCAN),
+                    requestEnableBluetooth
+                )
             } else {
                 // Handle permissions for older Android versions here, if needed
             }
@@ -199,7 +197,8 @@ class MainActivity : ComponentActivity() {
         }
     } // <-- Make sure to close the onCreate() method here
 
-    @Deprecated("This method is deprecated")
+    @Suppress("DEPRECATION") // Suppressing deprecation for this method
+    @Deprecated("SUPPRESS")
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,

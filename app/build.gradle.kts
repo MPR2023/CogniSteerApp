@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.cognisteer"
-        minSdk = 21
+        minSdk = 31
         targetSdk = 33
         versionCode = 1
         versionName = "1.0"
@@ -51,7 +51,7 @@ android {
 
 dependencies {
 
-    implementation("com.squareup.okhttp3:okhttp:4.9.1")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
     implementation("com.google.android.gms:play-services-location:18.0.0")
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
