@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import android.widget.Toast
+import android.bluetooth.BluetoothDevice
 
 
 
@@ -55,7 +56,6 @@ class MainActivity : ComponentActivity() {
                 // Check for BLE permissions
                 if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_ADMIN) == PackageManager.PERMISSION_GRANTED &&
                     ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
-
                     ActivityCompat.requestPermissions(this@MainActivity, arrayOf(Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH_CONNECT), 1234)
 
                     Log.d("BLE_Scan", "Scan result received: ${result.device.name}, ${result.device.address}")
@@ -134,6 +134,10 @@ class MainActivity : ComponentActivity() {
                 == PackageManager.PERMISSION_GRANTED) {
                 val wifiInfo = wifiManager.connectionInfo // Deprecated but still usable
                 Log.d("WiFiInfo", "SSID: ${wifiInfo.ssid}, BSSID: ${wifiInfo.bssid}")
+                val wifiList = wifiManager.scanResults
+                for (scanResult in wifiList) {
+                    Log.d("WiFi_Scan", "SSID: ${scanResult.SSID}, BSSID: ${scanResult.BSSID}")
+                }
             }
 
         // Initialize BluetoothAdapter
@@ -150,11 +154,19 @@ class MainActivity : ComponentActivity() {
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(Manifest.permission.BLUETOOTH_SCAN),
-                    requestEnableBluetooth
+                    1001
                 )
             } else {
                 // Handle permissions for older Android versions here, if needed
             }
+
+            val pairedDevices: Set<BluetoothDevice> = bluetoothAdapter.bondedDevices
+            for (device in pairedDevices) {
+                val deviceName = device.name
+                val deviceAddress = device.address
+                Log.d("Bluetooth_Paired", "Name: $deviceName, Address: $deviceAddress")
+            }
+
             if (ActivityCompat.checkSelfPermission(
                     this,
                     Manifest.permission.BLUETOOTH_ADMIN
@@ -179,6 +191,18 @@ class MainActivity : ComponentActivity() {
                     Log.d("BluetoothInfo", "Bluetooth is enabled")
                 }
             }
+        }
+        // Check and Request Bluetooth permissions for scanning
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_SCAN
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.BLUETOOTH_SCAN),
+                requestEnableBluetooth // Use the variable here
+            )
         } else {
             Log.d("BluetoothInfo", "Could not obtain BluetoothManager")
         }
@@ -206,7 +230,7 @@ class MainActivity : ComponentActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            1234 -> {  // This should match the request code you used for Bluetooth permissions
+            1001 -> {  // This should match the request code you used for Bluetooth permissions
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     try {
                         // Permission granted, proceed with Bluetooth operations
