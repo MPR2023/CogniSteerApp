@@ -118,7 +118,6 @@ class MainActivity : ComponentActivity() {
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED) {
             fetchLocation()
@@ -129,6 +128,9 @@ class MainActivity : ComponentActivity() {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1001)
         }
 
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.BLUETOOTH_CONNECT), 1001)
+        }
         // Initialize WiFiManager
             val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
