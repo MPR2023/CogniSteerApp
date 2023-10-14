@@ -56,7 +56,6 @@ class MainActivity : ComponentActivity() {
                 // Check for BLE permissions
                 if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
                     ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(this@MainActivity, arrayOf(Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH_CONNECT), 1001)
 
                     Log.d("BLE_Scan", "Scan result received: ${result.device.name}, ${result.device.address}")
 
@@ -107,23 +106,27 @@ class MainActivity : ComponentActivity() {
                 }
             } catch (e: Exception) {
                 Log.e("BLE_Scan", "Exception occurred: ${e.message}")
+            }catch (e: SecurityException) {
+                // Handle the exception, perhaps show a dialog to the user
+                Log.e("MainActivity", "Bluetooth permission is not granted.")
             }
         }
     }
 
-        override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
-        }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED) {
             fetchLocation()
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1001)
         }
 
         // Initialize WiFiManager
@@ -156,6 +159,7 @@ class MainActivity : ComponentActivity() {
                     arrayOf(Manifest.permission.BLUETOOTH_SCAN),
                     1001
                 )
+                Log.d("MainActivity", "Requested Bluetooth permissions.")  // Add this line
             } else {
                 // Handle permissions for older Android versions here, if needed
             }
