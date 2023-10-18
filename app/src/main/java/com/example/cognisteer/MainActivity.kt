@@ -33,11 +33,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import android.widget.Toast
-import android.bluetooth.BluetoothDevice
 
 
-
-var currentProtocol by mutableStateOf("No protocol yet")
 @Suppress("DEPRECATION") // Suppressing deprecation for the entire class
 class MainActivity : ComponentActivity() {
 
@@ -46,7 +43,6 @@ class MainActivity : ComponentActivity() {
 
     var currentProtocol by mutableStateOf("No protocol yet")
 
-    private val requestEnableBluetooth = 1
 
     private val leScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
@@ -54,8 +50,8 @@ class MainActivity : ComponentActivity() {
 
             try {
                 // Check for BLE permissions
-                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_ADMIN) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
 
                     Log.d("BLE_Scan", "Scan result received: ${result.device.name}, ${result.device.address}")
 
@@ -74,7 +70,12 @@ class MainActivity : ComponentActivity() {
 
                                     // OkHttp code to call the API
                                     val client = OkHttpClient()
-                                    val json = "{\"location\": {\"latitude\": $latitude, \"longitude\": $longitude}}"
+                                    val json = """
+                                    {
+                                        "location": {"latitude": $latitude, "longitude": $longitude},
+                                        "beacon": {"name": "MyBLEDevice", "address": "94:B5:55:C0:6B:7A"}
+                                    }
+                                    """
                                     val requestBody = json.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
 
                                     val request = Request.Builder()
@@ -104,11 +105,10 @@ class MainActivity : ComponentActivity() {
                 } else {
                     Log.d("BLE_Scan", "Bluetooth permissions not granted")
                 }
+            } catch (e: SecurityException) {
+                Log.e("MainActivity", "Bluetooth permission is not granted.")
             } catch (e: Exception) {
                 Log.e("BLE_Scan", "Exception occurred: ${e.message}")
-            }catch (e: SecurityException) {
-                // Handle the exception, perhaps show a dialog to the user
-                Log.e("MainActivity", "Bluetooth permission is not granted.")
             }
         }
     }
@@ -116,63 +116,75 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Initialize FusedLocationProviderClient
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
+        // Request permissions in a more organized manner
+        requestPermissions()
+
+        // Fetch location if permission is granted
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED) {
             fetchLocation()
         }
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1001)
+        // Initialize WiFiManager if permission is granted
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_WIFI_STATE)
+            == PackageManager.PERMISSION_GRANTED) {
+            initWiFiManager()
         }
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.BLUETOOTH_CONNECT), 1001)
-        }
-        // Initialize WiFiManager
-            val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        // Initialize WiFiManager and BluetoothAdapter
+        initBluetoothAdapter()
 
-            // Fetch WiFi Information
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_WIFI_STATE)
-                == PackageManager.PERMISSION_GRANTED) {
-                val wifiInfo = wifiManager.connectionInfo // Deprecated but still usable
-                Log.d("WiFiInfo", "SSID: ${wifiInfo.ssid}, BSSID: ${wifiInfo.bssid}")
-                val wifiList = wifiManager.scanResults
-                for (scanResult in wifiList) {
-                    Log.d("WiFi_Scan", "SSID: ${scanResult.SSID}, BSSID: ${scanResult.BSSID}")
+        // UI Content
+        setContent {
+            CogniSteerTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    Greeting("Android")
+                    DisplayProtocol(currentProtocol)  // Pass currentProtocol here
                 }
             }
+        }
+    }
 
-        // Initialize BluetoothAdapter
+    private fun requestPermissions() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.BLUETOOTH_CONNECT), 1002)
+        }
+        Log.d("Permissions", "Requesting BLUETOOTH_SCAN permission")
+    }
+
+    private fun initWiFiManager() {
+        val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_WIFI_STATE)
+            == PackageManager.PERMISSION_GRANTED) {
+
+            // Fetch WiFi Information
+            val wifiInfo = wifiManager.connectionInfo // Deprecated but still usable
+            Log.d("WiFiInfo", "SSID: ${wifiInfo.ssid}, BSSID: ${wifiInfo.bssid}")
+
+            // Scan for available WiFi networks
+            val wifiList = wifiManager.scanResults
+            for (scanResult in wifiList) {
+                Log.d("WiFi_Scan", "SSID: ${scanResult.SSID}, BSSID: ${scanResult.BSSID}")
+            }
+        }
+    }
+
+    private fun initBluetoothAdapter() {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
         if (bluetoothManager != null) {
             bluetoothAdapter = bluetoothManager.adapter
-
-            // Request Bluetooth permissions
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.BLUETOOTH_SCAN
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.BLUETOOTH_SCAN),
-                    1001
-                )
-                Log.d("MainActivity", "Requested Bluetooth permissions.")  // Add this line
-            } else {
-                // Handle permissions for older Android versions here, if needed
-            }
-
-            val pairedDevices: Set<BluetoothDevice> = bluetoothAdapter.bondedDevices
-            for (device in pairedDevices) {
-                val deviceName = device.name
-                val deviceAddress = device.address
-                Log.d("Bluetooth_Paired", "Name: $deviceName, Address: $deviceAddress")
-            }
-
             if (ActivityCompat.checkSelfPermission(
                     this,
                     Manifest.permission.BLUETOOTH_ADMIN
@@ -187,45 +199,8 @@ class MainActivity : ComponentActivity() {
                     1
                 )
             }
-            // Check Bluetooth support and status
-            if (bluetoothAdapter == null) {
-                Log.d("BluetoothInfo", "Device doesn't support Bluetooth")
-            } else {
-                if (!bluetoothAdapter.isEnabled) {
-                    Log.d("BluetoothInfo", "Bluetooth is not enabled")
-                } else {
-                    Log.d("BluetoothInfo", "Bluetooth is enabled")
-                }
-            }
         }
-        // Check and Request Bluetooth permissions for scanning
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.BLUETOOTH_SCAN
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.BLUETOOTH_SCAN),
-                requestEnableBluetooth // Use the variable here
-            )
-        } else {
-            Log.d("BluetoothInfo", "Could not obtain BluetoothManager")
-        }
-
-        setContent {
-            CogniSteerTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Greeting("Android")
-                    DisplayProtocol()
-                }
-            }
-        }
-    } // <-- Make sure to close the onCreate() method here
+    }
 
     @Suppress("DEPRECATION") // Suppressing deprecation for this method
     @Deprecated("SUPPRESS")
@@ -236,7 +211,27 @@ class MainActivity : ComponentActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            1001 -> {  // This should match the request code you used for Bluetooth permissions
+            1 -> {  // This should match the request code you used for Location permissions
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    try {
+                        // Permission granted, proceed with fetching location
+                        fetchLocation()
+                        Log.d("Permissions", "Location permission granted. Fetching location.")
+                    } catch (e: SecurityException) {
+                        // Handle the SecurityException
+                        Log.e("Permissions", "SecurityException while fetching location", e)
+                    }
+                } else {
+                    // Permission denied, disable functionality that depends on this permission
+                    Toast.makeText(
+                        this,
+                        "Location permissions are required for this feature. Disabling location functionality.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    Log.d("Permissions", "Location permission denied. Disabling location functionality.")
+                }
+            }
+            1002 -> {  // This should match the request code you used for Bluetooth permissions
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     try {
                         // Permission granted, proceed with Bluetooth operations
@@ -249,12 +244,12 @@ class MainActivity : ComponentActivity() {
                     }
                 } else {
                     // Permission denied, disable functionality that depends on this permission
-                    Toast.makeText(
-                        this,
-                        "Bluetooth permissions are required for this feature. Disabling Bluetooth functionality.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    Log.d("Permissions", "Bluetooth permission denied. Disabling Bluetooth functionality.")
+                    //Toast.makeText(
+                        //this,
+                        //"Bluetooth permissions are required for this feature. Disabling Bluetooth functionality.",
+                        //Toast.LENGTH_SHORT
+                   // ).show()
+                    //Log.d("Permissions", "Bluetooth permission denied. Disabling Bluetooth functionality.")
                 }
             }
             else -> {
@@ -284,7 +279,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
-        text = "  $name!",
+        text = " hhhhhhhhhhhhhheeeeeeeeeeeelllllllllllllll $name!",
         modifier = modifier
     )
 }
@@ -293,11 +288,11 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun GreetingPreview() {
     CogniSteerTheme {
-        Greeting(" ")
+        Greeting("                                  android ")
     }
 }
 
 @Composable
-fun DisplayProtocol() {
+fun DisplayProtocol(currentProtocol: String) {
     Text(text = currentProtocol)
 }
