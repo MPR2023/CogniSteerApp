@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
                                     val requestBody = json.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
 
                                     val request = Request.Builder()
-                                        .url("http://192.168.68.129:8000/fetch_protocol_based_on_location/")
+                                        .url("http://192.168.68.129:8000/fetch_protocol_based_on_location")
                                         .post(requestBody)
                                         .build()
 
@@ -279,7 +279,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
-        text = " hhhhhhhhhhhhhheeeeeeeeeeeelllllllllllllll $name!",
+        text = "                              eeeeeeeelllllllllllllll $name!",
         modifier = modifier
     )
 }
@@ -288,7 +288,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Composable
 fun GreetingPreview() {
     CogniSteerTheme {
-        Greeting("                                  android ")
+        Greeting("                                  ")
     }
 }
 
