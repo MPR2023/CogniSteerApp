@@ -79,13 +79,12 @@ class MainActivity : ComponentActivity() {
                                     val requestBody = json.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
 
                                     val request = Request.Builder()
-                                        .url("http://192.168.68.129:8000/fetch_protocol_based_on_location")
+                                        .url("http://192.168.68.129:8000/protocol_app/fetch_protocol_based_on_location/")
                                         .post(requestBody)
                                         .build()
 
                                     client.newCall(request).enqueue(object : Callback {
                                         override fun onFailure(call: Call, e: IOException) {
-                                            // Handle the error
                                         }
 
                                         override fun onResponse(call: Call, response: Response) {
