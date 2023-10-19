@@ -85,13 +85,25 @@ class MainActivity : ComponentActivity() {
 
                                     client.newCall(request).enqueue(object : Callback {
                                         override fun onFailure(call: Call, e: IOException) {
+                                            Log.e("OkHttp", "Request Failed: ${e.message}")
                                         }
 
                                         override fun onResponse(call: Call, response: Response) {
                                             if (response.isSuccessful) {
                                                 val responseBody = response.body?.string()
-                                                val protocol = responseBody?.let { JSONObject(it).optString("protocol", "default_value") }
+                                                val protocol = responseBody?.let {
+                                                    JSONObject(it).optString(
+                                                        "protocol",
+                                                        "default_value"
+                                                    )
+                                                }
                                                 currentProtocol = protocol ?: "No protocol received"
+                                            } else {
+                                                Log.e(
+                                                    "OkHttp",
+                                                    "Unsuccessful Response: ${response.message}"
+                                                )
+
                                             }
                                         }
                                     })
@@ -295,3 +307,4 @@ fun GreetingPreview() {
 fun DisplayProtocol(currentProtocol: String) {
     Text(text = currentProtocol)
 }
+
