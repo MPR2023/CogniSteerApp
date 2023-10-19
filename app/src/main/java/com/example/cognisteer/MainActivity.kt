@@ -61,6 +61,9 @@ class MainActivity : ComponentActivity() {
                     if (deviceName == "MyBLEDevice" || deviceAddress == "94:B5:55:C0:6B:7A") {
                         Log.d("BLE_Scan", "CogniSteerBeacon detected! Device Name: $deviceName, Device Address: $deviceAddress")
 
+                        // Stop scanning
+                        bluetoothAdapter.bluetoothLeScanner?.stopScan(this)
+
                         // Check for location permissions
                         if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
